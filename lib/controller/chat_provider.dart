@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-
 import '../model/chat_model.dart';
 import '../model/user_model.dart';
 
@@ -29,7 +28,9 @@ class ChatViewModel with ChangeNotifier {
               senderId: element.child("sender_id").value.toString(),
               receiverId: element.child("receiver_id").value.toString(),
               message: element.child("message").value.toString(),
-              status: element.child("status").value.toString());
+              status: element.child("status").value.toString(),
+              dateTime: element.child("dateTime").value!=null?DateTime.parse(element.child('dateTime').value.toString()):null,
+          );
           chatList.add(chat);
         },
       );
@@ -39,6 +40,7 @@ class ChatViewModel with ChangeNotifier {
   sendChat({required String otherUid})async {
     var cid = uid.toString();
     var chatId = getChatId(otherId: otherUid,cid: cid);
+    var timeStamp=DateTime.now().toIso8601String();
     var randomId = generateRandomString(40);
     DatabaseReference starCountRef = FirebaseDatabase.instance.ref('messages/$chatId');
 
@@ -81,7 +83,9 @@ class ChatViewModel with ChangeNotifier {
 
     FirebaseDatabase.instance.ref('messages').child(id).get().then((value) {
       if (value.exists) {
-      } else {
+
+      }
+      else {
         var chatId =
         FirebaseDatabase.instance.ref().child("messages").child(id).set(id);
         print(chatId);

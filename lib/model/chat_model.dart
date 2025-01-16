@@ -25,8 +25,11 @@ class ChatModel {
     receiverId: json["receiver_id"],
     message: json["message"],
     status: json["status"],
-    dateTime: json["dateTime"],
+    dateTime: json["dateTime"] != null
+        ? DateTime.parse(json["dateTime"])
+        : null,
   );
+
 
   Map<String, dynamic> toJson() => {
   "sender_id": senderId,
