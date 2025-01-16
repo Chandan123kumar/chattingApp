@@ -1,4 +1,5 @@
 
+import 'package:bat_karo/controller/notification_services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controller/user_controller.dart';
@@ -13,9 +14,11 @@ class ChatHomePage extends StatefulWidget {
 }
 
 class _ChatHomePageState extends State<ChatHomePage> {
+  NotificationServices notificationServices=NotificationServices();
   @override
   void initState() {
     super.initState();
+    notificationServices.requestNotificationPrmission();
     Future.microtask(() {
       Provider.of<UserProvider>(context, listen: false).fetchUserData(widget.uid);
     });
