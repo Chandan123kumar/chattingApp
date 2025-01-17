@@ -1,3 +1,4 @@
+import 'dart:core';
 import 'dart:math';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,9 +10,11 @@ import '../controller/chat_provider.dart';
 import 'home_page.dart';
 
 class MassagePage extends StatefulWidget {
-  final String otherUid;
+   final String name;
+   final String email;
+   final String otherUid;
 
-  const MassagePage({super.key, required this.otherUid});
+  const MassagePage({super.key, required this.otherUid, required this.name, required this.email});
 
   @override
   State<MassagePage> createState() => _MassagePageState();
@@ -50,6 +53,15 @@ class _MassagePageState extends State<MassagePage> {
                   ));
             },
             icon: const Icon(Icons.arrow_back)),
+        title: Row(children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.name,style: TextStyle(color: Colors.white),),
+              Text(widget.email,style: TextStyle(color: Colors.white,fontSize: 15))
+            ],
+          )
+        ],),
       ),
       body: Column(
         children: [

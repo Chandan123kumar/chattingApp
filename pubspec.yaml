@@ -45,6 +45,10 @@ dependencies:
   firebase_messaging: ^15.2.0
   flutter_local_notifications: ^18.0.1
   app_settings: ^5.1.1
+  googleapis_auth: ^1.6.0
+  googleapis: ^13.2.0
+  json_annotation: ^4.9.0
+  oauth2_client: ^3.3.0
 
 dev_dependencies:
   flutter_test:
@@ -98,3 +102,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  assets:
+    - assets/chatx-app-cb38f-firebase-adminsdk-610vw-0a7e258777.json

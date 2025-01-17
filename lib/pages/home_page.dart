@@ -15,10 +15,13 @@ class ChatHomePage extends StatefulWidget {
 
 class _ChatHomePageState extends State<ChatHomePage> {
   NotificationServices notificationServices=NotificationServices();
+
   @override
   void initState() {
     super.initState();
     notificationServices.requestNotificationPrmission();
+    notificationServices.getDeviceToken();
+    notificationServices.getServerKey();
     Future.microtask(() {
       Provider.of<UserProvider>(context, listen: false).fetchUserData(widget.uid);
     });
@@ -52,7 +55,7 @@ class _ChatHomePageState extends State<ChatHomePage> {
                   var user = userProvider.userData[index];
                   return InkWell(
                     onTap: () {
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>MassagePage(otherUid: user.id.toString()),));
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) =>MassagePage(otherUid: user.id.toString(), name: user.name.toString(), email: user.email.toString(),),));
                     },
                     child: Card(
                       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
