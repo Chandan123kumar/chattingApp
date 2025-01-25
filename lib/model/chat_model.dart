@@ -9,6 +9,7 @@ class ChatModel {
   String? receiverId;
   String? message;
   String? status;
+  String? imageUrl;
   DateTime? dateTime;
 
 
@@ -17,6 +18,7 @@ class ChatModel {
     this.receiverId,
     this.message,
     this.status,
+    this.imageUrl,
     this.dateTime,
   });
 
@@ -25,6 +27,7 @@ class ChatModel {
     receiverId: json["receiver_id"],
     message: json["message"],
     status: json["status"],
+    imageUrl: 'imageUrl',
     dateTime: json["dateTime"] != null
         ? DateTime.parse(json["dateTime"])
         : null,
@@ -36,6 +39,7 @@ class ChatModel {
   "receiver_id": receiverId,
   "message": message,
   "status": status,
+  "imageUrl":imageUrl,
   "dateTime": DateTime.timestamp().toIso8601String(),
   };
 }

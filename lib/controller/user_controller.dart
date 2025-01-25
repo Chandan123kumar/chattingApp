@@ -1,7 +1,9 @@
 import 'dart:core';
 
+import 'package:bat_karo/controller/notification_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -15,23 +17,24 @@ class UserProvider with ChangeNotifier{
   var nameController= TextEditingController();
   var emailController= TextEditingController();
   var passwordController= TextEditingController();
+  FirebaseMessaging messaging=FirebaseMessaging.instance;
 
   List<UserModel> _userData= [];
   List<UserModel> get userData=> _userData;
-
+  UserModel? _currentUser;
+  UserModel? get currentUser => _currentUser;
   // SignUp code//
 
   void userSignUp(BuildContext context) async{
     var name =  nameController.text.toString();
     var email = emailController.text.toString();
     var password= passwordController.text.toString();
-
     if(name.isNotEmpty && email.isNotEmpty && password.isNotEmpty){
 
       isLoding = true;
       notifyListeners();
       try{
-        var result = await auth.createUserWithEmailAndPassword(email: email, password: password);
+        var result = await auth.createUserWithEmailAndPassword(email: email, password: password,);
 
         if(result.user!= null){
           var uid = result.user?.uid;
@@ -39,7 +42,7 @@ class UserProvider with ChangeNotifier{
           await ref.set({
             "id":uid,
             "name":name,
-            "email":email
+            "email":email,
           });
           nameController.clear();
           emailController.clear();
@@ -112,6 +115,26 @@ class UserProvider with ChangeNotifier{
     } finally {
       isLoding = false;
       notifyListeners();
+    }
+  }
+  Future<void> getCurrentUser()async{
+    final currentUser=FirebaseAuth.instance.currentUser?.uid;
+    if(currentUser==null){
+      print('No user is logedIn');
+      return;
+    }
+    try{
+      DatabaseReference ref=FirebaseDatabase.instance.ref("user/$currentUser");
+      final dataSnapshot=await ref.get();
+      if(dataSnapshot.exists){
+        _currentUser=UserModel.fromJson(Map<String,dynamic>.from(dataSnapshot.value as Map));
+        notifyListeners();
+      }
+      else{
+        print('No data found for current user');
+      }
+    }catch(ex){
+    print('error $ex');
     }
   }
 

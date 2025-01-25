@@ -2,6 +2,7 @@ import 'package:bat_karo/controller/user_controller.dart';
 import 'package:bat_karo/pages/home_page.dart';
 import 'package:bat_karo/pages/signup_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +18,11 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
     _navigateToNextPage();
+    FirebaseDynamicLinks.instance.onLink.listen((dynamicLinkData) {
+      Navigator.pushNamed(context, dynamicLinkData.link.path);
+    }).onError((error) {
+      // Handle errors
+    });
   }
 
   void _navigateToNextPage() async {

@@ -1,18 +1,32 @@
 
-import 'package:bat_karo/pages/signup_page.dart';
+import 'package:bat_karo/controller/notification_services.dart';
+import 'package:bat_karo/dynamic_link_code/dynamic_link_screen.dart';
 import 'package:bat_karo/pages/splash_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controller/chat_provider.dart';
 import 'controller/user_controller.dart';
 import 'firebase_options.dart';
-
+Future<void> backgroundHandler(RemoteMessage message) async {
+  print(message.data.toString());
+  print(message.notification!.title);
+}
 void main()async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  final PendingDynamicLinkData? initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
+  FirebaseMessaging.onBackgroundMessage(backgroundHandler);
+  FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true, badge: true, sound: true);
+  NotificationServices notificationServices=NotificationServices();
+  notificationServices.initApp();
+
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => UserProvider(),),
     ChangeNotifierProvider(create: (context) => ChatViewModel(),),
@@ -23,7 +37,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return  MaterialApp(
+    return  const MaterialApp(
         debugShowCheckedModeBanner: false,
         home:SplashPage(),
         );

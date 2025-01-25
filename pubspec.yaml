@@ -49,6 +49,10 @@ dependencies:
   googleapis: ^13.2.0
   json_annotation: ^4.9.0
   oauth2_client: ^3.3.0
+  image_picker: ^1.1.2
+  firebase_storage: ^12.4.1
+  firebase_dynamic_links: ^6.1.1
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +64,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+  change_app_package_name: ^1.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -103,4 +108,5 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
   assets:
-    - assets/chatx-app-cb38f-firebase-adminsdk-610vw-0a7e258777.json
+    - assets/access_token_secret_key.json
+

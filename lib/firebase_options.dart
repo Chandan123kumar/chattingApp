@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -50,23 +41,51 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDJY6tBm9UPDT32UKfzQOjr20gketCVaqw',
-    appId: '1:1038517724094:android:314e29765bf80e24724fef',
-    messagingSenderId: '1038517724094',
-    projectId: 'chatx-app-cb38f',
-    databaseURL: 'https://chatx-app-cb38f-default-rtdb.firebaseio.com',
-    storageBucket: 'chatx-app-cb38f.firebasestorage.app',
+    apiKey: 'AIzaSyA5rzvIClgP9SAFQXZjWm-wvgJ9IhxxeqY',
+    appId: '1:436573396589:android:f20f696da3bacfc8916964',
+    messagingSenderId: '436573396589',
+    projectId: 'fir-demo-project-57fd1',
+    databaseURL: 'https://fir-demo-project-57fd1-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'fir-demo-project-57fd1.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyALg1Xzr9gvJPYqepOlFj3CieWZzIl2wKo',
-    appId: '1:1038517724094:ios:6ccf21fae8296dfd724fef',
-    messagingSenderId: '1038517724094',
-    projectId: 'chatx-app-cb38f',
-    databaseURL: 'https://chatx-app-cb38f-default-rtdb.firebaseio.com',
-    storageBucket: 'chatx-app-cb38f.firebasestorage.app',
-    iosClientId: '1038517724094-iu0ccqo6t9vufjuenpi1dnggr9pc0jkc.apps.googleusercontent.com',
+    apiKey: 'AIzaSyC92T17MiF_65N6U9wEG_ffmNhIPG98tAE',
+    appId: '1:252328139224:ios:bc8dffaa9ce0c92af53aad',
+    messagingSenderId: '252328139224',
+    projectId: 'storage-application-377b3',
+    storageBucket: 'storage-application-377b3.appspot.com',
     iosBundleId: 'com.example.batKaro',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyB2YDl_jmAKydtfiAgJ2OnZ75SoF5XOCog',
+    appId: '1:252328139224:web:ee7b7213ea1721baf53aad',
+    messagingSenderId: '252328139224',
+    projectId: 'storage-application-377b3',
+    authDomain: 'storage-application-377b3.firebaseapp.com',
+    storageBucket: 'storage-application-377b3.appspot.com',
+    measurementId: 'G-6XH3Y231ET',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyC92T17MiF_65N6U9wEG_ffmNhIPG98tAE',
+    appId: '1:252328139224:ios:bc8dffaa9ce0c92af53aad',
+    messagingSenderId: '252328139224',
+    projectId: 'storage-application-377b3',
+    storageBucket: 'storage-application-377b3.appspot.com',
+    iosBundleId: 'com.example.batKaro',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyB2YDl_jmAKydtfiAgJ2OnZ75SoF5XOCog',
+    appId: '1:252328139224:web:9d204f1bb213c49af53aad',
+    messagingSenderId: '252328139224',
+    projectId: 'storage-application-377b3',
+    authDomain: 'storage-application-377b3.firebaseapp.com',
+    databaseURL: 'https://storage-application-377b3-default-rtdb.firebaseio.com',
+    storageBucket: 'storage-application-377b3.appspot.com',
+    measurementId: 'G-JMNG1PRE4Y',
   );
 
 }

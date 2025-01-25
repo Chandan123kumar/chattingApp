@@ -8,5 +8,5 @@ class AssetsRes {
 
   static const String PLUGIN_NAME = 'bat_karo';
   static const String PLUGIN_VERSION = '1.0.0+1';
-  static const String CHATX_APP_CB38F_FIREBASE_ADMINSDK_610VW_0A7E258777 = 'assets/chatx-app-cb38f-firebase-adminsdk-610vw-0a7e258777.json';
+  static const String ACCESS_TOKEN_SECRET_KEY = 'assets/access_token_secret_key.json';
 }

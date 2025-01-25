@@ -1,81 +1,198 @@
+import 'dart:convert';
+
 import 'package:app_settings/app_settings.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:bat_karo/pages/chat_page.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:googleapis_auth/auth.dart';
 import 'package:googleapis_auth/auth_io.dart';
 
-class NotificationServices{
-  FirebaseMessaging messaging=FirebaseMessaging.instance;
-  void requestNotificationPrmission()async{
-    NotificationSettings settings= await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      criticalAlert: true,
-      provisional: true,
-      sound: true
+class NotificationServices {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  void requestNotificationPermission() async {
+    NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        criticalAlert: true,
+        provisional: true,
+        sound: true
     );
-    if(settings.authorizationStatus==AuthorizationStatus.authorized){
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted Permission');
     }
-    else if (settings.authorizationStatus==AuthorizationStatus.provisional) {
+    else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
       print('user granted provisional permission');
-    } 
-    else{
+    }
+    else {
       AppSettings.openAppSettings();
       print('user denied permission');
     }
   }
-  Future<void> getDeviceToken() async {
-    try {
-      String? token = await messaging.getToken();
-      if (token != null) {
-        print('Device Token: $token');
-      } else {
-        print('Failed to generate device token');
-      }
-    } catch (e) {
-      print('Error while fetching device token: $e');
-    }
-  }
-  Future<String>getServerKey()async{
+
+  Future<String> getServerKey() async {
     var scopes = [
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/firebase.database',
       'https://www.googleapis.com/auth/firebase.messaging',
     ];
 
-    final client= await clientViaServiceAccount(
+    final client = await clientViaServiceAccount(
         ServiceAccountCredentials.fromJson({
           "type": "service_account",
-          "project_id": "chatx-app-cb38f",
-          "private_key_id": "0a7e25877748b501ae505bb12bd3b8ce532aae7d",
-          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDN/oJAJoacz78T\nHLqjNeLuzsPmw7wpPk0z1jN/o5ZxZQikmp7wKZc32AoywIdvtKuZiIIO3ipyiEft\nuA80oGvvRPMCk8ViWMbTMF4jzInwi+zDHPpo8ilat+N2xXIiy4Vf602U7zz2/UJ/\npb+6ym4YQ8nBqb4UM0w7y28qTToXkvZAExMPNgh2gICFDXj4HNhIGGV/oYgL9XDm\n78XrTs6RW0jmJqdijPgFqiz29BypaGPci0fB4H3sBdMhzEPmZfNUY3HcmzQi1SnY\n9cbbtRD6ETyQAE2BdQvSIaFR3W1w2QG4YGS5AznRq87wCbUcOpwOyf5AELwWmGrL\nwDa75tB1AgMBAAECggEAVyvUR7xl67cYR0i5jHaxxVg3W5DKL/Pe7MhA+8soz2yv\ndyS9jKk1BltEmYyS48kjcvHrA8qtUNFuCuGAgcc/Vb4qThVlioRCAz3tIJ4eY257\nL2g0abPMn0jBF9JfRe01UE19g8Cn3md3PBhSpgOjCl6pYuxndRnuMUGaFd8fbbiu\n1Lh9MmnE8UnzwKI1/iSqbh6dEunwvXNT7sJhEAaMUhBp+X5v+L+jRKExFWr0eOCX\nORlawwclsbu/xstFpGt9mMDAq54k/D25/AkvMaU6Io3Hqk9m2x2IsF4lyAs5f2mP\n3uLYFwQsdvquiYdN7Z4WF+ntB/im4vLy3V53Mv9VcwKBgQD3vT1x1TDDkLFQKpFa\nlixVuJNcytW+KR/t/cjCwD6cm8rc42IKYBBiZ9Ba/zfdpAmerSGDiDJwouUDrxGk\ngbJ56wiJv7+Ag6W6zkB4ms7qVoQ1nUBPs/HDstZ3DQ0Jpm38GubRUEqweA9afwVi\nvZ+j9XCT19Lv1TcU3qQJf6svWwKBgQDU3OxdpRaDcJpy5ZnsadgZRJIK/GhlPp53\nD/SXW+W3ghcidOui8FCjCRy0N1NLQgGUpfsfs+jDBWObumL2uACeq0hBuccGHiWt\n7tDpoY33o1psHuLRPvfyJyQnnPsrToN9bPha82CpCaTlbGhYnpVSlnP1hjPd75ag\nU9OO3BJYbwKBgQDseHoaGgD96zMU7kzoRsfy2sfunr3/UYnkxYXIP3CEVEEDLxf6\nB1AcXjOHaG2O5nE4QNHolyxuT06Cga05dYNC1JHFyn2k0gRzl0P62un+zK5N7tfg\nPEbdIeuMn6x+NZpuNc90pEtmvnMJUo11fsLO4gyfUjdKLh7xkMLLPk3MWQKBgFac\nVah8xb5RkOZzOcASCRWu6uWBclDPu9aiLVlw0PVr/1HL1R0FPyo3SPCjGkci4lXD\ne3yYzXqctLzmh+HvWIE3HD1yA+MfXSF6bJLDY2qBkwcvQgb14hkrh/B+VUx3s9TT\nA/Kt2ISvIeMfyw1T6VojUadzJaOGGvm9YfVc4jINAoGAcAwzt1LBjKvjzMD9d78a\n+Wr4MVuXiYJgsqKYIVfu05YsRHqRtx73jv0xqzVGMU2MMKWyjQf4mdZ/WLu4wGkr\nd+80ffR/BCMm/61rn14XCmQsbfmhEjVMMx+ncjbSzZxZE9UilN9xI+6AL4af8jE7\n8BHxbwNuzR8cmniXTNDVIqg=\n-----END PRIVATE KEY-----\n",
-          "client_email": "firebase-adminsdk-610vw@chatx-app-cb38f.iam.gserviceaccount.com",
-          "client_id": "105646919873212617220",
+          "project_id": "fir-demo-project-57fd1",
+          "private_key_id": "16160c568fd9f7ba91ad0f5aca3ea7c4fa1721f6",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClJLizyziUbA89\naiJHi6EHkhodwWlYbBHF5Jrw7tDkjUtUB7MgZvmSsaAVXuKyt7t+0QKPfBqGP/RS\nKK34hdBPYCNEyXj+Sekqa4hQ7bXiIaVFooA+I+ci+JaPNKgA8bdtEGpZnJsCYVwo\nqjadKOKou5trZla1BRdhns/2s+tp9B2nZFYHN5w0D31nEKQTeU1jtl5/ePubprY4\nWkZmqTQrDNHoQdchQWdpfmzjf85o0xl1xh/erjmLBP2rBft7RwKzXLSegtyhmp5s\nY7l1hZnjMGn0sWfXDSzW8pphBEQL09eGBME2oGTor7tHFpMV9twyXwYzASnJRxGF\nD7/h5SV1AgMBAAECggEAGIZCCa1Jyzza7Ido7NAPC2VGjJmu78sovocq/VGx4uca\nwzFbiBnSwVawi8vqBZlkdjpK040eEUbJHTReVZRlsYv44Nu8pKLMRhjvBvmuM5VE\ninlN6yyAxEA/d6fdtTowP7ma2ZD4shtMSNuyPZeXRXCK7aGmib5mUQB5KM1iTfsO\nIScosEguv3SkCheSCfLKVHCbTNEk5hW5DwKEyoYlciFngz99jrRepSfoOG6z2J/j\naGiKw2R3gkY/bmNxr/eMWaBrdYGNreyLoC+xSfU8rwqrTTV3CaI9epUZO01CyEaq\nEwDR98b4adTyx6fRmHhUuKHv/uooIE4dQACtsYwzAQKBgQDJZ/ICSnBSd4QFe1dI\noc9I1SaB0iA0sHPLj5fPNuUjGTjSVMv8QW4cOtqBpdaxxjSsAgyp92//tR28Jdfb\nRiFY1ke/0i0wDvUGwfqIIneO8MUbtBpRi7fma86l+tbO3IQeXvP+EyrANJUNmsbY\n8toGU5sOaO4Cf5lJPO/kgYZT9QKBgQDR6G03GCXBt4K1n3rosab1kidxiAX+bTAt\nYqiPzj8x2Y4yqrMU7zcDwQggNRnNacv/aou6KbTOJGZWI4FFAjryrjpe8spMq6Ee\nmN8FOPKk0NixgyGfLPwM25LAHDLmf/WwnNe8nNbX6KLcyxWGEx85WfetbtLTrsic\nT+mFirIbgQKBgQClwd+iVQNGS8ii/lTimRFQ/uP3Oil5U7OpV994EdTZYxupt1I+\npNbrcuB8jTE6FEcrPXCQve02RShYvch+VaSCSbC5RVAdWmH8ks8PFVbSlIOUflCe\nxl+uyxFC90Os8j3mBP3IIJwxndUCYly/Fnerd0mIvYENG1jbtsQ0iwkztQKBgA76\nCnDX5DnCIi1bR6W6pzL2TqInFmZk2/8g/u3jxVaFM0QiMczYlJBMAYxqvYCOf+Ol\ncnrB5wieSD71IZAO7K3MCJYltJFr3X8VYTQ6L/XagNuJg6ibyRARypKycF9J2fnT\n9wCaICofix89zjdWve+Vn7pcIebAncepW/wPPU4BAoGBAK6kjvUtYXr+iv0SoGGF\nNd7VI1QfmkoBgZMzKQidpHmb9JE9pbhh9B6Hn5EcKLXf0k2WXkrnG24+DGF56YIn\nQVc/7SPb2fNzuYodrtQrViKxx+nYktlXLW6kAQCfv+I5ILMjIBLiPprFMURRBaxN\n4Fim9CXAUZmuFY58CiTMMG4G\n-----END PRIVATE KEY-----\n",
+          "client_email": "firebase-adminsdk-1jc9a@fir-demo-project-57fd1.iam.gserviceaccount.com",
+          "client_id": "100893037528515540262",
           "auth_uri": "https://accounts.google.com/o/oauth2/auth",
           "token_uri": "https://oauth2.googleapis.com/token",
           "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-610vw%40chatx-app-cb38f.iam.gserviceaccount.com",
+          "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-1jc9a%40fir-demo-project-57fd1.iam.gserviceaccount.com",
           "universe_domain": "googleapis.com"
         }
-        ),scopes
+        ), scopes
     );
-    final serverKey=client.credentials.accessToken.data;
+    final serverKey = client.credentials.accessToken.data;
     print("serverKey=$serverKey");
     return serverKey;
   }
-  Future<void> storeDeviceToken(String uid) async {
+
+  Future<void> initApp() async {
+    AndroidInitializationSettings androidInitializationSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher');
+    InitializationSettings initializationSettings = InitializationSettings(
+        android: androidInitializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+
+    FirebaseMessaging.onMessage.listen((event) {
+        print(event.notification);
+        print(event.data);
+    },);
+  }
+
+  Future<void> showNotification(RemoteMessage message) async {
+    AndroidNotificationChannel channel = AndroidNotificationChannel(
+        message.notification!.android!.channelId.toString(),
+        message.notification!.android!.channelId.toString(),
+        importance: Importance.high,
+        showBadge: true,
+        playSound: true
+    );
+
+    AndroidNotificationDetails androidNotificationDetails = AndroidNotificationDetails(
+        channel.id,
+        channel.name.toString(),
+        channelDescription: 'Channel description',
+        importance: Importance.max,
+        priority: Priority.high,
+        sound: channel.sound
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+        android: androidNotificationDetails);
+    await flutterLocalNotificationsPlugin.show(
+        0,
+        message.notification?.title,
+        message.notification?.body,
+        notificationDetails,
+        payload: message.data.toString()
+    );
+  }
+
+
+  // void sendOrderNotification({required String message,required String token,required String senderName })async{
+  //   print('token id :$token');
+  //   final serverKey=await getServerKey();
+  //   try{
+  //     final response=await http.post(Uri.parse('https://fcm.googleapis.com/v1/projects/flutterfirebaseauth-439e4/messages:send'),
+  //      headers: <String,String>{
+  //       'Content-Type':'application/json',
+  //        'Authorization':'Bearer $serverKey  '
+  //      },
+  //       body: jsonEncode(<String, dynamic>{
+  //         "message":{
+  //           "token":token,
+  //           "data":{},
+  //           "notification":{
+  //             "title":senderName,
+  //             "body":message
+  //           }
+  //         }
+  //       })
+  //     );
+  //     if(response.statusCode==200){
+  //     }else{
+  //       print('failed to send notification,Status code:${response.statusCode}');
+  //       Fluttertoast.showToast(msg: 'Failed to send notification');
+  //     }
+  //   }catch(ex){
+  //     print('error sending notification: $ex');
+  //     Fluttertoast.showToast(msg: 'error sending notification');
+  //   }
+  // }
+  Future<void> sendOrderNotification({
+    required String message,
+    required String token,
+    required String senderName,
+  }) async
+  {
+    final serverKey = await getServerKey();
+    const fcmUrl = "https://fcm.googleapis.com/v1/projects/fir-demo-project-57fd1/messages:send";
+
     try {
-      String? token = await messaging.getToken();
-      if (token != null) {
-        DatabaseReference ref = FirebaseDatabase.instance.ref("user/$uid");
-        await ref.update({"deviceToken": token});
-        print('Device token stored successfully');
+      final response = await http.post(
+        Uri.parse(fcmUrl),
+        headers: {
+          'Authorization': 'Bearer $serverKey',
+          'Content-Type' : 'application/json'
+        },
+        body: json.encode({
+          "message": {
+            "token":token ,
+            "notification": {
+              "title": "New Message",
+              "body": message
+            }
+          }
+        })
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification sent successfully: ${response.body}');
+        Fluttertoast.showToast(msg: ' notification send successfully');
+      } else {
+        print('Failed to send notification: ${response.statusCode} ${response
+            .body}');
+        Fluttertoast.showToast(msg: 'Failed to send notification');
       }
     } catch (e) {
-      print('Error storing device token: $e');
+      print('Error sending notification: $e');
+      Fluttertoast.showToast(msg: 'Error sending notification');
     }
   }
 
+
+
+  Future<void> handleMessage(RemoteMessage message) async {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) =>
+          ChatPage(otherUid: message.data['senderName'],
+              name: message.data['message'],
+              email: message.data['']),));
+    }
+  }
+
+
+
+
 }
+
 
