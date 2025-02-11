@@ -32,42 +32,22 @@ class ChatViewModel with ChangeNotifier {
     var chatId = getChatId(cid: cid, otherId: otherId);
 
     DatabaseReference starCountRef =
-    FirebaseDatabase.instance.ref('messages/$chatId');
-    starCountRef
-        .orderByChild('dateTime')
-        .onValue
-        .listen((DatabaseEvent event) {
+        FirebaseDatabase.instance.ref('messages/$chatId');
+    starCountRef.orderByChild('dateTime').onValue.listen((DatabaseEvent event) {
       chatList.clear();
       var data = event.snapshot.children;
       for (var element in data) {
-          var chat = ChatModel(
-            senderId: element
-                .child("sender_id")
-                .value
-                .toString(),
-            receiverId: element
-                .child("receiver_id")
-                .value
-                .toString(),
-            message: element
-                .child("message")
-                .value
-                .toString(),
-            status: element
-                .child("status")
-                .value
-                .toString(),
-            imageUrl: element.child('imageUrl').value.toString(),
-            dateTime: element
-                .child("dateTime")
-                .value != null
-                ? DateTime.parse(element
-                .child('dateTime')
-                .value
-                .toString())
-                : null,
-          );
-          chatList.add(chat);
+        var chat = ChatModel(
+          senderId: element.child("sender_id").value.toString(),
+          receiverId: element.child("receiver_id").value.toString(),
+          message: element.child("message").value.toString(),
+          status: element.child("status").value.toString(),
+          imageUrl: element.child('imageUrl').value.toString(),
+          dateTime: element.child("dateTime").value != null
+              ? DateTime.parse(element.child('dateTime').value.toString())
+              : null,
+        );
+        chatList.add(chat);
       }
       notifyListeners();
     });
@@ -80,12 +60,10 @@ class ChatViewModel with ChangeNotifier {
     var timeStamp = DateTime.now().toIso8601String();
     var randomId = generateRandomString(40);
     String? imageUrl;
-    String messageType = "text"; // Default to text
-
-    // Upload image if selected
+    String messageType = "text";
     if (image != null) {
       imageUrl = await uploadImageToStorage(image);
-      messageType = "image"; // Set type as image if image is sent
+      messageType = "image";
     }
 
     DatabaseReference chatRef = FirebaseDatabase.instance.ref(
@@ -95,25 +73,21 @@ class ChatViewModel with ChangeNotifier {
     var userSnapshot = await userRef.get();
 
     String senderName = userSnapshot.exists
-        ? userSnapshot
-        .child("name")
-        .value
-        ?.toString() ?? "Unknown Person"
+        ? userSnapshot.child("name").value?.toString() ?? "Unknown Person"
         : "Unknown";
 
     await chatRef.child(randomId).set(ChatModel(
       message: image == null ? chatController.text.trim() : null,
-      // Empty if it's an image
       senderId: uid,
       receiverId: otherUid,
       messageType: messageType,
-      // "text" or "image"
       imageUrl: imageUrl,
       dateTime: DateTime.now(),
-    ).toJson());
+            status = 'sent')
+        .toJson());
 
-    String? deviceToken = await deviceTokenService.getDeviceTokenFromFirebase(
-        otherUid);
+    String? deviceToken =
+        await deviceTokenService.getDeviceTokenFromFirebase(otherUid);
     if (deviceToken != null) {
       await notificationServices.sendOrderNotification(
         message: image != null ? "[Image]" : chatController.text,
@@ -141,21 +115,11 @@ class ChatViewModel with ChangeNotifier {
       var data = event.snapshot.children;
       userList.clear();
       data.forEach(
-            (element) {
+        (element) {
           var user = UserModel(
-            name: element
-                .child("name")
-                .value
-                .toString(),
-            email: element
-                .child("email")
-                .value
-                .toString(),
-            id: element
-                .child("id")
-                .value
-                .toString(),
-            // token: element.child('token').value.toString()
+            name: element.child("name").value.toString(),
+            email: element.child("email").value.toString(),
+            id: element.child("id").value.toString(),
           );
           userList.add(user);
         },
@@ -218,6 +182,7 @@ class ChatViewModel with ChangeNotifier {
     FirebaseDatabase.instance.ref('messages/$chatId/$messageId');
     await deleteRef.remove();
   }
+
   String getChatId({required String cid, required String otherId}) {
     var id = "";
     if (cid.compareTo(otherId) > 0) {

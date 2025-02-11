@@ -31,6 +31,7 @@ class _ChatPageState extends State<ChatPage> {
   ScrollController controller = ScrollController();
   UserStatusManager userStatusManager = UserStatusManager();
   final RequestCallService _callService = RequestCallService();
+  var viewModel = Provider.of<ChatViewModel>(context, listen: false);
 
   @override
   void initState() {
@@ -158,10 +159,7 @@ class _ChatPageState extends State<ChatPage> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               InkWell(
-                                onLongPress: () {
-                                  // String chatId = getChatId(cid: uId, otherId: widget.otherUid);
-                                  // viewModel.deleteChatMessage(chatId, user.senderId.toString());
-                                },
+                                onLongPress: () {},
                                 child: Container(
                                     margin: EdgeInsets.only(left: 10),
                                     padding: const EdgeInsets.all(10),
@@ -169,23 +167,23 @@ class _ChatPageState extends State<ChatPage> {
                                     BoxConstraints(maxWidth: MediaQuery
                                         .sizeOf(context)
                                         .width / 1.2),
-                                    decoration: BoxDecoration(
-                                        color: Theme
-                                            .of(context)
-                                            .colorScheme
-                                            .primaryContainer,
-                                        borderRadius: const BorderRadius.only(
+                                          decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primaryContainer,
+                                              borderRadius: const BorderRadius.only(
                                           topLeft: Radius.circular(10),
                                           topRight: Radius.circular(10),
                                           bottomLeft: Radius.circular(10),
                                         )
                                     ),
                                     child: Text('${user.message}',
-                                      style: const TextStyle(
-                                          color: Colors.black, fontSize: 14),)
-                                ),
-                              ),
-                              Text(DateFormat.jm().format(
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14),
+                                          )),
+                                    ),
+                                    Text(DateFormat.jm().format(
                                   user.dateTime!.toLocal()))
                             ],
                           ),
@@ -315,5 +313,18 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-
+  void markMessagesAsSeen() {
+    var chatId = viewModel.getChatId(cid: uId, otherId: widget.otherUid);
+    DatabaseReference chatRef =
+        FirebaseDatabase.instance.ref('messages/$chatId');
+    chatRef.once().then((DatabaseEvent event) {
+      for (var child in event.snapshot.children) {
+        var messageData = child.value as Map<dynamic, dynamic>;
+        if (messageData["receiver_id"] == uId &&
+            messageData["status"] != "seen") {
+          chatRef.child(child.key!).update({"status": "seen"});
+        }
+      }
+    });
+  }
 }
