@@ -13,7 +13,6 @@ class ChatModel {
   DateTime? dateTime;
   String? messageType;
 
-
   ChatModel({
     this.senderId,
     this.receiverId,

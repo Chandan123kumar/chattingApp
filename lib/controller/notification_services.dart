@@ -138,12 +138,7 @@ class NotificationServices {
   //     Fluttertoast.showToast(msg: 'error sending notification');
   //   }
   // }
-  Future<void> sendOrderNotification({
-    required String message,
-    required String token,
-    required String senderName,
-  }) async
-  {
+  Future<void> sendOrderNotification({required String message, required String token, required String senderName,}) async {
     final serverKey = await getServerKey();
     const fcmUrl = "https://fcm.googleapis.com/v1/projects/fir-demo-project-57fd1/messages:send";
 
@@ -158,7 +153,7 @@ class NotificationServices {
           "message": {
             "token":token ,
             "notification": {
-              "title": "New Message",
+              "title": senderName,
               "body": message
             }
           }
@@ -179,18 +174,53 @@ class NotificationServices {
     }
   }
 
-
-
   Future<void> handleMessage(RemoteMessage message) async {
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.push(MaterialPageRoute(builder: (context) =>
           ChatPage(otherUid: message.data['senderName'],
               name: message.data['message'],
-              email: message.data['']),));
+              email: message.data[''],
+            profile: '',),));
     }
   }
+  Future<void> sendCallNotification({required String callerID, required String token, required String callerName,}) async {
+    final serverKey = await getServerKey();
+    const fcmUrl = "https://fcm.googleapis.com/v1/projects/fir-demo-project-57fd1/messages:send";
 
+    try {
+      final response = await http.post(
+          Uri.parse(fcmUrl),
+          headers: {
+            'Authorization': 'Bearer $serverKey',
+            'Content-Type' : 'application/json'
+          },
+          body: json.encode({
+            "message": {
+              "token":token ,
+              "notification": {
+                "title": "$callerName is calling you",
+                "body": "Tap to answer the call"
+              },
+              "data":{
+                "call_id":callerID
+              }
+            }
+          })
+      );
 
+      if (response.statusCode == 200) {
+        print('Notification sent successfully: ${response.body}');
+        Fluttertoast.showToast(msg: ' notification send successfully');
+      } else {
+        print('Failed to send notification: ${response.statusCode} ${response
+            .body}');
+        Fluttertoast.showToast(msg: 'Failed to send notification');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+      Fluttertoast.showToast(msg: 'Error sending notification');
+    }
+  }
 
 
 }
