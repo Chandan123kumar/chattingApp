@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../model/chat_model.dart';
 import '../model/user_model.dart';
 import 'device_token_service.dart';
@@ -49,26 +51,64 @@ class ChatViewModel with ChangeNotifier {
         );
         chatList.add(chat);
       }
+      updateMessageToDeliver(chatId, cid);
       notifyListeners();
     });
   }
 
-  Future<void> sendChat(
-      {required String otherUid, String? message, File? image}) async {
+  void updateMessageToDeliver(String chatId, String userId) {
+    DatabaseReference chatRef = FirebaseDatabase.instance.ref(
+        "messages/$chatId");
+    chatRef.once().then((event) {
+      if (event.snapshot.value != null) {
+        for (var element in event.snapshot.children) {
+          if (element
+              .child('receiver_id')
+              .value
+              .toString() == userId && element
+              .child('status')
+              .value
+              .toString() == "Sent") {
+            chatRef.child(element.key!).update({
+              "status": "delivered"
+            });
+          }
+        }
+      }
+    },);
+  }
+
+  markMessageAsSeen(String chatId, String userId) {
+    DatabaseReference chatRef = FirebaseDatabase.instance.ref(
+        "messages/$chatId");
+    chatRef.once().then((value) {
+      if (value.snapshot.value != null) {
+        for (var element in value.snapshot.children) {
+          if (element
+              .child('receiver_id')
+              .value
+              .toString() == userId && element
+              .child('status')
+              .value
+              .toString() != 'Seen') {
+            chatRef.child(element.key!).update({
+              "status": "Seen"
+            });
+          }
+        }
+      }
+    },);
+  }
+
+  Future<void> sendChat({required String otherUid, String? message,}) async {
     var cid = uid.toString();
     var chatId = getChatId(otherId: otherUid, cid: cid);
     var timeStamp = DateTime.now().toIso8601String();
     var randomId = generateRandomString(40);
     String? imageUrl;
     String messageType = "text";
-    if (image != null) {
-      imageUrl = await uploadImageToStorage(image);
-      messageType = "image";
-    }
-
     DatabaseReference chatRef = FirebaseDatabase.instance.ref(
         'messages/$chatId');
-
     DatabaseReference userRef = FirebaseDatabase.instance.ref("user/$cid");
     var userSnapshot = await userRef.get();
 
@@ -77,20 +117,21 @@ class ChatViewModel with ChangeNotifier {
         : "Unknown";
 
     await chatRef.child(randomId).set(ChatModel(
-      message: image == null ? chatController.text.trim() : null,
+      message: chatController.text.trim(),
       senderId: uid,
       receiverId: otherUid,
       messageType: messageType,
+      status: 'Sent',
       imageUrl: imageUrl,
-      dateTime: DateTime.now(),
-            status = 'sent')
+      dateTime: DateTime.now(),)
+
         .toJson());
 
     String? deviceToken =
         await deviceTokenService.getDeviceTokenFromFirebase(otherUid);
     if (deviceToken != null) {
       await notificationServices.sendOrderNotification(
-        message: image != null ? "[Image]" : chatController.text,
+        message: chatController.text,
         token: deviceToken,
         senderName: senderName,
       );
@@ -146,11 +187,11 @@ class ChatViewModel with ChangeNotifier {
   }
 
 
-  pickAndSendImage(String otherUid) async {
+  pickAndSendImage(String otherUid, File image) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       File image = File(pickedFile.path);
-      await sendChat(otherUid: otherUid, image: image);
+      await sendChat(otherUid: otherUid,);
     }
   }
 

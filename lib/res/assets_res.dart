@@ -12,4 +12,5 @@ class AssetsRes {
   static const String GROUP = 'assets/animations/group.json';
   static const String MSG = 'assets/animations/msg.json';
   static const String MSGS = 'assets/animations/msgs.json';
+  static const String GOOGLE_SERVICE = 'assets/google_service.json';
 }

@@ -119,4 +119,5 @@ flutter:
     - assets/animations/group.json
     - assets/animations/msg.json
     - assets/animations/msgs.json
+    - assets/google_service.json
 

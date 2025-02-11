@@ -66,7 +66,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               child: Text(isLastPage ? "Get Started" : "Next"),
               onPressed: () {
                 if (isLastPage) {
-                  // Navigate to home screen
                   Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(

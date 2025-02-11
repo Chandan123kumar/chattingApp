@@ -1,14 +1,15 @@
 import 'package:bat_karo/controller/chat_provider.dart';
 import 'package:bat_karo/controller/device_token_service.dart';
 import 'package:bat_karo/controller/notification_services.dart';
+import 'package:bat_karo/model/user_model.dart';
 import 'package:bat_karo/pages/profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:googleapis/compute/v1.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../controller/user_controller.dart';
 import 'chat_page.dart';
 
@@ -26,6 +27,8 @@ class _ChatHomePageState extends State<ChatHomePage> {
   String? userName;
   String? userEmail;
   String? profilePic;
+  TextEditingController searchController = TextEditingController();
+  List<UserModel> filterUsers = [];
 
   @override
   void initState() {
@@ -38,11 +41,16 @@ class _ChatHomePageState extends State<ChatHomePage> {
         Provider.of<UserProvider>(context, listen: false);
     userProvider.getCurrentUser();
     getUserData();
-    Future.microtask(() {
-      Provider.of<UserProvider>(context, listen: false)
-          .fetchUserData(widget.uid);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UserProvider userProvider = Provider.of<UserProvider>(
+          context, listen: false);
+      userProvider.fetchUserData(widget.uid).then((_) {
+        setState(() {
+          filterUsers =
+              List.from(userProvider.userData); // Ensure list is populated
+        });
+      });
     });
-
     FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
         alert: true, badge: true, sound: true);
     // getUserData();
@@ -129,7 +137,7 @@ class _ChatHomePageState extends State<ChatHomePage> {
             children: [
               // User Account Header
               UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.pinkAccent, // Background color
                 ),
                 accountName: Text(
@@ -197,9 +205,13 @@ class _ChatHomePageState extends State<ChatHomePage> {
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                   horizontal: 18.0, vertical: 10),
               child: TextField(
+                controller: searchController,
+                onChanged: (query) {
+                  filterUsersList(query, userProvider.userData);
+                },
                 decoration: InputDecoration(
                   hintText: 'Search',
                   prefixIcon: const Icon(Icons.search),
@@ -213,13 +225,13 @@ class _ChatHomePageState extends State<ChatHomePage> {
               builder: (context, userProvider, child) {
                 if (userProvider.isLoding) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (userProvider.userData.isEmpty) {
+                } else if (filterUsers.isEmpty) {
                   return const Center(child: Text("No users found"));
                 } else {
                   return Expanded(child: ListView.builder(
-                    itemCount: userProvider.userData.length,
+                    itemCount: filterUsers.length,
                     itemBuilder: (context, index) {
-                      var user = userProvider.userData[index];
+                      var user = filterUsers[index];
                       return InkWell(
                         onTap: () {
                           Navigator.push(
@@ -317,4 +329,18 @@ class _ChatHomePageState extends State<ChatHomePage> {
       },
     );
   }
+
+  void filterUsersList(String query, List<UserModel> users) {
+    setState(() {
+      if (query.isEmpty) {
+        filterUsers = users;
+      } else {
+        filterUsers = users
+            .where((user) =>
+            user.name!.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
 }

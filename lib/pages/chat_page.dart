@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'dart:core';
-import 'dart:io';
+
 import 'package:bat_karo/audio_video_calling/audio_video_call_service.dart';
 import 'package:bat_karo/audio_video_calling/generate_caller_id.dart';
-import 'package:bat_karo/model/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../audio_video_calling/VideoCalling.dart';
 import '../controller/chat_provider.dart';
 import '../user_status_manager/user_status_manager.dart';
@@ -31,12 +33,29 @@ class _ChatPageState extends State<ChatPage> {
   ScrollController controller = ScrollController();
   UserStatusManager userStatusManager = UserStatusManager();
   final RequestCallService _callService = RequestCallService();
-  var viewModel = Provider.of<ChatViewModel>(context, listen: false);
+  TextEditingController _controller = TextEditingController();
+  Timer? _seenTimer;
+
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(() {
+      if (Provider
+          .of<ChatViewModel>(context, listen: false)
+          .chatController
+          .text
+          .isNotEmpty) {
+        userStatusManager.startTypingStatus();
+      } else {
+        userStatusManager.stopTyping();
+      }
+    },);
     var uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+    String callID = GenerateCallerId.generateCallId(widget.otherUid, uId);
+    var viewModel = Provider.of<ChatViewModel>(context, listen: false)
+        .markMessageAsSeen(callID, uId);
+
     Future.delayed(
       const Duration(seconds: 2),
           () async {
@@ -45,26 +64,36 @@ class _ChatPageState extends State<ChatPage> {
             cid: uid, otherId: widget.otherUid);
       },
     );
-    userStatusManager.setUserStatus(true);
-    userStatusManager.monitorConnection();
+
+    userStatusManager.setUserStatus(isOnline: true);
+    userStatusManager.userOfflineStatus();
   }
 
   @override
   void dispose() {
-    userStatusManager.setUserStatus(true);
+    userStatusManager.setUserStatus(isOnline: false);
+    _seenTimer?.cancel();
     super.dispose();
   }
 
   @override
   void deactivate() {
-    userStatusManager.setUserStatus(false);
+    userStatusManager.setUserStatus(isOnline: false, isTyping: false);
     super.deactivate();
   }
 
   @override
   void activate() {
-    userStatusManager.setUserStatus(true);
+    userStatusManager.setUserStatus(isOnline: true, isTyping: true);
     super.activate();
+  }
+
+  void onStartTyping() {
+    userStatusManager.setUserStatus(isOnline: true, isTyping: true);
+    _seenTimer?.cancel();
+    _seenTimer = Timer(Duration(seconds: 0), () {
+      userStatusManager.setUserStatus(isOnline: true, isTyping: false);
+    },);
   }
 
   void _listenFirIncomingCall() {
@@ -161,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
                               InkWell(
                                 onLongPress: () {},
                                 child: Container(
-                                    margin: EdgeInsets.only(left: 10),
+                                    margin: const EdgeInsets.only(left: 10),
                                     padding: const EdgeInsets.all(10),
                                     constraints:
                                     BoxConstraints(maxWidth: MediaQuery
@@ -183,8 +212,15 @@ class _ChatPageState extends State<ChatPage> {
                                                 fontSize: 14),
                                           )),
                                     ),
-                                    Text(DateFormat.jm().format(
-                                  user.dateTime!.toLocal()))
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(DateFormat.jm().format(
+                                      user.dateTime!.toLocal())),
+                                  SizedBox(width: 4,),
+                                  Icon(Icons.done_all, color: Colors.grey,)
+                                ],
+                              ),
                             ],
                           ),
                         )
@@ -228,12 +264,11 @@ class _ChatPageState extends State<ChatPage> {
                   icon: const Icon(
                     Icons.image, color: Colors.pinkAccent, size: 30,),
                   onPressed: () async {
-                    File? image = await viewModel.pickAndSendImage(
-                        widget.otherUid);
-                    if (image != null) {
-                      await viewModel.sendChat(
-                          otherUid: widget.otherUid, image: image);
-                    }
+                    // File? image = await viewModel.pickAndSendImage(widget.otherUid);
+                    // if (image != null) {
+                    //   await viewModel.sendChat(
+                    //       otherUid: widget.otherUid,);
+                    // }
                   },
                 ),
                 Expanded(
@@ -241,6 +276,13 @@ class _ChatPageState extends State<ChatPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: TextField(
                         controller: viewModel.chatController,
+                        onChanged: (text) {
+                          if (text.isNotEmpty) {
+                            userStatusManager.startTypingStatus();
+                          } else {
+                            userStatusManager.stopTyping();
+                          }
+                        },
                         decoration: InputDecoration(
                             hintText: " type massage...",
                             border: OutlineInputBorder(
@@ -274,12 +316,19 @@ class _ChatPageState extends State<ChatPage> {
           Map<String, dynamic> status =
           Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
           bool isOnline = status['Online'] ?? false;
+          bool isTyping = status['isTyping'] ?? false;
           String lastSeen = status['lastSeen'] ?? '';
 
-          if (isOnline) {
+          if (isTyping) {
+            return const Text(
+              'Typing...',
+              style: TextStyle(
+                  color: CupertinoColors.systemGrey2, fontSize: 14),);
+          }
+          else if (isOnline) {
             return const Text(
               'Online',
-              style: TextStyle(color: Colors.lightBlueAccent, fontSize: 14),
+              style: TextStyle(color: Colors.white, fontSize: 14),
             );
           } else {
             DateTime lastSeenTime = DateTime.parse(lastSeen);
@@ -298,7 +347,7 @@ class _ChatPageState extends State<ChatPage> {
               lastSeenText = "last seen yesterday at $formattedTime";
             } else {
               lastSeenText =
-              "last seen on ${DateFormat('dd/MM/yyyy, hh:mm a').format(
+              "seen on ${DateFormat('dd/MM/yyyy, hh:mm a').format(
                   lastSeenTime)}";
             }
 
@@ -313,18 +362,31 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void markMessagesAsSeen() {
-    var chatId = viewModel.getChatId(cid: uId, otherId: widget.otherUid);
-    DatabaseReference chatRef =
-        FirebaseDatabase.instance.ref('messages/$chatId');
-    chatRef.once().then((DatabaseEvent event) {
-      for (var child in event.snapshot.children) {
-        var messageData = child.value as Map<dynamic, dynamic>;
-        if (messageData["receiver_id"] == uId &&
-            messageData["status"] != "seen") {
-          chatRef.child(child.key!).update({"status": "seen"});
-        }
-      }
-    });
+  Widget getMessageStatusIcon(String status) {
+    if (status == "sent") {
+      return const Icon(Icons.check, color: Colors.grey); // Single tick
+    } else if (status == "delivered") {
+      return const Icon(Icons.check, color: Colors.blue); // Single blue tick
+    } else if (status == "seen") {
+      return const Icon(
+          Icons.done_all, color: Colors.blue); // Double blue ticks
+    }
+    return Container();
   }
+
+
+// void markMessagesAsSeen() {
+//   // var chatId = viewModel.getChatId(cid: uId, otherId: widget.otherUid);
+//   DatabaseReference chatRef =
+//       FirebaseDatabase.instance.ref('messages/$chatId');
+//   chatRef.once().then((DatabaseEvent event) {
+//     for (var child in event.snapshot.children) {
+//       var messageData = child.value as Map<dynamic, dynamic>;
+//       if (messageData["receiver_id"] == uId &&
+//           messageData["status"] != "seen") {
+//         chatRef.child(child.key!).update({"status": "seen"});
+//       }
+//     }
+//   });
+// }
 }

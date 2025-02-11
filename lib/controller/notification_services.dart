@@ -2,14 +2,12 @@ import 'dart:convert';
 
 import 'package:app_settings/app_settings.dart';
 import 'package:bat_karo/pages/chat_page.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:googleapis_auth/auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:http/http.dart' as http;
 
 class NotificationServices {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -47,8 +45,8 @@ class NotificationServices {
         ServiceAccountCredentials.fromJson({
           "type": "service_account",
           "project_id": "fir-demo-project-57fd1",
-          "private_key_id": "16160c568fd9f7ba91ad0f5aca3ea7c4fa1721f6",
-          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQClJLizyziUbA89\naiJHi6EHkhodwWlYbBHF5Jrw7tDkjUtUB7MgZvmSsaAVXuKyt7t+0QKPfBqGP/RS\nKK34hdBPYCNEyXj+Sekqa4hQ7bXiIaVFooA+I+ci+JaPNKgA8bdtEGpZnJsCYVwo\nqjadKOKou5trZla1BRdhns/2s+tp9B2nZFYHN5w0D31nEKQTeU1jtl5/ePubprY4\nWkZmqTQrDNHoQdchQWdpfmzjf85o0xl1xh/erjmLBP2rBft7RwKzXLSegtyhmp5s\nY7l1hZnjMGn0sWfXDSzW8pphBEQL09eGBME2oGTor7tHFpMV9twyXwYzASnJRxGF\nD7/h5SV1AgMBAAECggEAGIZCCa1Jyzza7Ido7NAPC2VGjJmu78sovocq/VGx4uca\nwzFbiBnSwVawi8vqBZlkdjpK040eEUbJHTReVZRlsYv44Nu8pKLMRhjvBvmuM5VE\ninlN6yyAxEA/d6fdtTowP7ma2ZD4shtMSNuyPZeXRXCK7aGmib5mUQB5KM1iTfsO\nIScosEguv3SkCheSCfLKVHCbTNEk5hW5DwKEyoYlciFngz99jrRepSfoOG6z2J/j\naGiKw2R3gkY/bmNxr/eMWaBrdYGNreyLoC+xSfU8rwqrTTV3CaI9epUZO01CyEaq\nEwDR98b4adTyx6fRmHhUuKHv/uooIE4dQACtsYwzAQKBgQDJZ/ICSnBSd4QFe1dI\noc9I1SaB0iA0sHPLj5fPNuUjGTjSVMv8QW4cOtqBpdaxxjSsAgyp92//tR28Jdfb\nRiFY1ke/0i0wDvUGwfqIIneO8MUbtBpRi7fma86l+tbO3IQeXvP+EyrANJUNmsbY\n8toGU5sOaO4Cf5lJPO/kgYZT9QKBgQDR6G03GCXBt4K1n3rosab1kidxiAX+bTAt\nYqiPzj8x2Y4yqrMU7zcDwQggNRnNacv/aou6KbTOJGZWI4FFAjryrjpe8spMq6Ee\nmN8FOPKk0NixgyGfLPwM25LAHDLmf/WwnNe8nNbX6KLcyxWGEx85WfetbtLTrsic\nT+mFirIbgQKBgQClwd+iVQNGS8ii/lTimRFQ/uP3Oil5U7OpV994EdTZYxupt1I+\npNbrcuB8jTE6FEcrPXCQve02RShYvch+VaSCSbC5RVAdWmH8ks8PFVbSlIOUflCe\nxl+uyxFC90Os8j3mBP3IIJwxndUCYly/Fnerd0mIvYENG1jbtsQ0iwkztQKBgA76\nCnDX5DnCIi1bR6W6pzL2TqInFmZk2/8g/u3jxVaFM0QiMczYlJBMAYxqvYCOf+Ol\ncnrB5wieSD71IZAO7K3MCJYltJFr3X8VYTQ6L/XagNuJg6ibyRARypKycF9J2fnT\n9wCaICofix89zjdWve+Vn7pcIebAncepW/wPPU4BAoGBAK6kjvUtYXr+iv0SoGGF\nNd7VI1QfmkoBgZMzKQidpHmb9JE9pbhh9B6Hn5EcKLXf0k2WXkrnG24+DGF56YIn\nQVc/7SPb2fNzuYodrtQrViKxx+nYktlXLW6kAQCfv+I5ILMjIBLiPprFMURRBaxN\n4Fim9CXAUZmuFY58CiTMMG4G\n-----END PRIVATE KEY-----\n",
+          "private_key_id": "7c200c860ed9a78898fcbaa819e46fb63244934b",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCtEpY2Ou5gdxDC\n3lNxHhYXteyoIm4kc9JWbXrUc1bakjcHqS/A/g8oFi4GwfUCZSSycBuwHsbK7Ueo\nA/eCkFjDYGVNHpH4qmaF//joXe8NS3k730U4xms9+BGVeKtfosLpnbb0iLWr+MJm\nYPMqyf7u/+twCS1x9iz7jzvtaDB4dzD4zsbi8OshmG+9KBUvVoAORNVZnh+j8YmW\nsyeRUeEt/fbXtRQOm/ukELi8dFIkvrYMcc+SJsDUmstorbTkDIM+Lg1u445sZp8h\nT89qNg0Pug8AVJk5YG8G5bRKU+RE/ef9BRWZpFgj8c4kJAuV3Yvrq8EAghKolSUl\nnn3ioS6tAgMBAAECggEAA9w5BPsiA31MXqhSUKDU6dD5NxPThJUfwSU+etwauRPP\nTeiwY7vW7zQ1cRmk4xmJ7L/y4iYBlZeexEjYXa1mCW+OOt7ebx8v27fGn7ouoYuI\nJ/V2KArG7BIrJDwViHPLKKZHpSMieDQ7c8igS9lHCiIjqHNP8+2DedXrRoOPJzSp\n52uJqbNWyrQpMwiRVn2Y/B8zUtRWsQr0jLfgYaNJnB+jJ8ExAKYn1klEqGc8gzig\nXLfLLGGbZQf+rjeXUcDnN082tJAW1dDTpYvlgNFWtsCiVVdTrLjRtV+cCx08dTed\n5S9L9kpvr43WnGmzuxu+zghEU2ghA0ZbK1yEXZ4vCQKBgQC5CJRJqwckx8nkiodA\n0UWVgw8IJINSPkoEca9iUfdaVyClT4l89V7OqnDXZ85vE+mi/Alk0aaByFTk6VH8\nj76buVQS8f3M1GllDSaSrmoGWwqEV18e3QhNafr7q4ISwb5MGPpUjMGJivk7xnce\nd6nOdUSd5IJid4Mar6Oo1C1btQKBgQDvc6HCT2yk2WYuhMMtlla19zDR4xIKwg4L\nRAavv1iOj4rTdJUQAwNiZpUTWEG51Ffte0yL0kWHT0fVYouRkI4CGhOjZgjuk10T\nIkukX+FMnItGMAB2+xpdj+bAX+Xm+X5fz7FpKYm2Yx0O11Z5IDhldB0Ut9S1EYaZ\n8aJwKA6SGQKBgDUtfQirCZONg72V/ocnXds5XlGVxNQXKMicL66PJgqlrbE06aur\nDUNSAro1kEOmMmhwDPcXtcXo4FUlpTVzznEM01fainmatmufWu2fCMOo2J3uSl0h\nYyh0g/heczSWz+0o5JD2Hw07jqOaR1PPSlMWqtDCAqLv/BLoVZ3I1PxdAoGAAoOE\nPzX2PgTKPdLG+cOKRX7C1HE9zz8aRqQALfgkRdrb6jxfFDvz3SSWjA1xIzJHegbB\nVvZuJG2Ao4zVSkHqO7tqWVzI2zhQ0dKaWK9o/hTmoWX/m0AnlrPcCEj5cONNoFPd\n2OzGtVN1CqLYFY1xCh+d7om/gecdMqCGxAanoIECgYEAi2/wacKHU+eHB5S/5N8V\nIvBS5V4jCWNehKvLdyktHqXq3evBwtQ6eqrzh4QlYl6cj+qhY79XrR/doosjX0C5\nWTSZdnq1SkNqsHcMiLkGcHGwVmcs0q0TxNH12RC79aVQoKiER+EWzJNjUUj+TYEO\nV9ywRPHD5kgmnqpsKp50kfk=\n-----END PRIVATE KEY-----\n",
           "client_email": "firebase-adminsdk-1jc9a@fir-demo-project-57fd1.iam.gserviceaccount.com",
           "client_id": "100893037528515540262",
           "auth_uri": "https://accounts.google.com/o/oauth2/auth",
