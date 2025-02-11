@@ -41,7 +41,7 @@ dependencies:
   provider: ^6.1.2
   fluttertoast: ^8.2.10
   firebase_database: ^11.3.0
-  intl: ^0.20.1
+  intl: ^0.20.2
   firebase_messaging: ^15.2.0
   flutter_local_notifications: ^18.0.1
   app_settings: ^5.1.1
@@ -53,6 +53,13 @@ dependencies:
   firebase_storage: ^12.4.1
   firebase_dynamic_links: ^6.1.1
   share_plus: ^10.1.4
+  get: ^4.6.6
+  smooth_page_indicator: ^1.2.0+3
+  shimmer: ^3.0.0
+  zego_uikit_prebuilt_call: ^4.16.21
+  random_string: ^2.3.1
+  lottie: ^3.2.0
+
 
 dev_dependencies:
   flutter_test:
@@ -109,4 +116,7 @@ flutter:
   # see https://flutter.dev/to/font-from-package
   assets:
     - assets/access_token_secret_key.json
+    - assets/animations/group.json
+    - assets/animations/msg.json
+    - assets/animations/msgs.json
 

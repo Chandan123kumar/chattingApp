@@ -1,7 +1,6 @@
-
+import 'package:bat_karo/audio_video_calling/audio_video_call_service.dart';
 import 'package:bat_karo/controller/notification_services.dart';
-import 'package:bat_karo/dynamic_link_code/dynamic_link_screen.dart';
-import 'package:bat_karo/pages/splash_page.dart';
+import 'package:bat_karo/user_authentication/splash_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -19,6 +18,9 @@ void main()async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // await Hive.initFlutter();
+  // Hive.registerAdapter(UserModelAdapter());
+  // await Hive.openBox<UserModel>('userBox');
 
   final PendingDynamicLinkData? initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
   FirebaseMessaging.onBackgroundMessage(backgroundHandler);
@@ -35,6 +37,7 @@ void main()async {
 }
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return  const MaterialApp(

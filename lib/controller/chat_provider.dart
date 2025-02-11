@@ -11,7 +11,6 @@ import '../model/user_model.dart';
 import 'device_token_service.dart';
 import 'notification_services.dart';
 
-
 class ChatViewModel with ChangeNotifier {
   final TextEditingController chatController = TextEditingController();
   final String chatHint = "Enter message";
@@ -25,7 +24,9 @@ class ChatViewModel with ChangeNotifier {
   final _auth = FirebaseAuth.instance.currentUser!;
   final ImagePicker _picker = ImagePicker();
   File? _selectImage;
+  UserModel? _currentUser;
 
+  UserModel? get currentUser => _currentUser;
 
   getChatList({required String cid, required String otherId}) {
     var chatId = getChatId(cid: cid, otherId: otherId);
@@ -38,8 +39,7 @@ class ChatViewModel with ChangeNotifier {
         .listen((DatabaseEvent event) {
       chatList.clear();
       var data = event.snapshot.children;
-      data.forEach(
-            (element) {
+      for (var element in data) {
           var chat = ChatModel(
             senderId: element
                 .child("sender_id")
@@ -60,63 +60,83 @@ class ChatViewModel with ChangeNotifier {
             imageUrl: element.child('imageUrl').value.toString(),
             dateTime: element
                 .child("dateTime")
-                .value != null ? DateTime.parse(element
+                .value != null
+                ? DateTime.parse(element
                 .child('dateTime')
                 .value
-                .toString()) : null,
+                .toString())
+                : null,
           );
           chatList.add(chat);
-        },
-      );
+      }
       notifyListeners();
     });
   }
 
-  sendChat(
+  Future<void> sendChat(
       {required String otherUid, String? message, File? image}) async {
     var cid = uid.toString();
     var chatId = getChatId(otherId: otherUid, cid: cid);
     var timeStamp = DateTime.now().toIso8601String();
     var randomId = generateRandomString(40);
-    DatabaseReference starCountRef = FirebaseDatabase.instance.ref(
-        'messages/$chatId');
-
     String? imageUrl;
+    String messageType = "text"; // Default to text
 
+    // Upload image if selected
     if (image != null) {
       imageUrl = await uploadImageToStorage(image);
+      messageType = "image"; // Set type as image if image is sent
     }
 
-    //sent, seen, unseen
-    await starCountRef.child(randomId).set(ChatModel(
-        message: chatController.text.toString(),
-        senderId: uid,
-        receiverId: otherUid,
-        status: timeStamp,
-        imageUrl: imageUrl).toJson());
+    DatabaseReference chatRef = FirebaseDatabase.instance.ref(
+        'messages/$chatId');
+
+    DatabaseReference userRef = FirebaseDatabase.instance.ref("user/$cid");
+    var userSnapshot = await userRef.get();
+
+    String senderName = userSnapshot.exists
+        ? userSnapshot
+        .child("name")
+        .value
+        ?.toString() ?? "Unknown Person"
+        : "Unknown";
+
+    await chatRef.child(randomId).set(ChatModel(
+      message: image == null ? chatController.text.trim() : null,
+      // Empty if it's an image
+      senderId: uid,
+      receiverId: otherUid,
+      messageType: messageType,
+      // "text" or "image"
+      imageUrl: imageUrl,
+      dateTime: DateTime.now(),
+    ).toJson());
 
     String? deviceToken = await deviceTokenService.getDeviceTokenFromFirebase(
         otherUid);
-    if (deviceToken != null && deviceToken.isNotEmpty) {
+    if (deviceToken != null) {
       await notificationServices.sendOrderNotification(
-        message: message ??'Sent an image',
+        message: image != null ? "[Image]" : chatController.text,
         token: deviceToken,
-        senderName: _auth.displayName.toString(),);
+        senderName: senderName,
+      );
     }
 
     chatController.clear();
     notifyListeners();
   }
 
+
   String generateRandomString(int len) {
     var r = Random();
-    const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    const _chars =
+        'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
     return List.generate(len, (index) => _chars[r.nextInt(_chars.length)])
         .join();
   }
 
   getUserList() {
-    DatabaseReference starCountRef = FirebaseDatabase.instance.ref('users');
+    DatabaseReference starCountRef = FirebaseDatabase.instance.ref('user');
     starCountRef.onValue.listen((DatabaseEvent event) {
       var data = event.snapshot.children;
       userList.clear();
@@ -144,36 +164,16 @@ class ChatViewModel with ChangeNotifier {
     });
   }
 
-  String getChatId({required String cid, required String otherId}) {
-    var id = "";
-    if (cid.compareTo(otherId) > 0) {
-      id = "${cid}_$otherId";
-    } else {
-      id = "${otherId}_$cid";
-    }
-
-    FirebaseDatabase.instance.ref('messages').child(id).get().then((value) {
-      if (value.exists) {
-
-      }
-      else {
-        var chatId =
-        FirebaseDatabase.instance.ref().child("messages").child(id).set(id);
-        print(chatId);
-      }
-    });
-    return id;
-  }
 
   Future<String> uploadImageToStorage(File image) async {
     try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('chat_images/${DateTime
+      String fileName = "${DateTime
           .now()
-          .millisecondsSinceEpoch}.jpg');
+          .millisecondsSinceEpoch}.jpg";
+      final storageRef = FirebaseStorage.instance.ref().child(
+          'chat_images/$uid/$fileName');
 
-      UploadTask uploadTask= storageRef.putFile(File(image.path));
+      UploadTask uploadTask = storageRef.putFile(image);
       TaskSnapshot snapshot = await uploadTask;
       return await snapshot.ref.getDownloadURL();
     } catch (e) {
@@ -181,9 +181,59 @@ class ChatViewModel with ChangeNotifier {
     }
   }
 
-  Future<File?> pickAndSendImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    return pickedFile != null ? File(pickedFile.path) : null;
 
+  pickAndSendImage(String otherUid) async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      File image = File(pickedFile.path);
+      await sendChat(otherUid: otherUid, image: image);
+    }
+  }
+
+  Future<void> getCurrentUser() async {
+    final currentUser = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUser == null) {
+      print('No user is logedIn');
+      return;
+    }
+    try {
+      DatabaseReference ref = FirebaseDatabase.instance.ref(
+          "user/$currentUser");
+      final dataSnapshot = await ref.get();
+      if (dataSnapshot.exists) {
+        _currentUser = UserModel.fromJson(
+            Map<String, dynamic>.from(dataSnapshot.value as Map));
+        notifyListeners();
+      }
+      else {
+        print('No data found for current user');
+      }
+    } catch (ex) {
+      print('error $ex');
+    }
+  }
+
+  Future<void> deleteChatMessage(String chatId, String messageId) async {
+    DatabaseReference deleteRef =
+    FirebaseDatabase.instance.ref('messages/$chatId/$messageId');
+    await deleteRef.remove();
+  }
+  String getChatId({required String cid, required String otherId}) {
+    var id = "";
+    if (cid.compareTo(otherId) > 0) {
+      id = "${cid}_$otherId";
+    } else {
+      id = "${otherId}_$cid";
+    }
+    FirebaseDatabase.instance.ref('messages').child(id).get().then((value) {
+      if (value.exists) {} else {
+        var chatId =
+        FirebaseDatabase.instance.ref().child("messages").child(id).set(id);
+        print(chatId);
+      }
+    });
+    return id;
   }
 }
+
+

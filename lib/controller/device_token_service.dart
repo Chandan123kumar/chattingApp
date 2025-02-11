@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class DeviceTokenService{
@@ -32,5 +33,17 @@ class DeviceTokenService{
       return data['token'];
     }
     return null;
+  }
+
+  Future<Uri> generateDynamicLink() async {
+    var shortLink = await FirebaseDynamicLinks.instance.buildShortLink(
+      DynamicLinkParameters(
+        link: Uri.parse("https://rdynamiclinkappr.page.link"),
+        uriPrefix: "https://rdynamiclinkappr.page.link",
+        androidParameters: const AndroidParameters(
+            packageName: "com.communication.talktogether"),
+      ),);
+
+    return shortLink.shortUrl;
   }
 }

@@ -11,6 +11,7 @@ class ChatModel {
   String? status;
   String? imageUrl;
   DateTime? dateTime;
+  String? messageType;
 
 
   ChatModel({
@@ -20,6 +21,7 @@ class ChatModel {
     this.status,
     this.imageUrl,
     this.dateTime,
+    this.messageType
   });
 
   factory ChatModel.fromJson(Map<String, dynamic> json) => ChatModel(
@@ -31,6 +33,7 @@ class ChatModel {
     dateTime: json["dateTime"] != null
         ? DateTime.parse(json["dateTime"])
         : null,
+      messageType: json['messageType']
   );
 
 
@@ -41,5 +44,6 @@ class ChatModel {
   "status": status,
   "imageUrl":imageUrl,
   "dateTime": DateTime.timestamp().toIso8601String(),
+    "messageType": messageType
   };
 }

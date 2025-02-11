@@ -1,5 +1,4 @@
-
-import 'package:bat_karo/pages/signup_page.dart';
+import 'package:bat_karo/user_authentication/signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -93,7 +92,8 @@ class _LoginPageState extends State<LoginPage> {
                           ],
                         ),
                         TextButton(onPressed: () {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SignupPage(),));
+                          Navigator.push(context, MaterialPageRoute(builder: (
+                              context) => const SignupPage(),));
                         }, child: const Text("Create new Account"))
                       ],
                     ),

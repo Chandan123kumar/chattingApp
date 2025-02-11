@@ -1,3 +1,5 @@
+import 'package:bat_karo/controller/chat_provider.dart';
+import 'package:bat_karo/controller/device_token_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import '../controller/user_controller.dart';
@@ -13,6 +15,7 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController numberController = TextEditingController();
+  ChatViewModel chatViewModel = ChatViewModel();
 
   @override
   void initState() {
@@ -53,14 +56,19 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  CircleAvatar(
-                    radius: 50,
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://media.istockphoto.com/id/1392528328/photo/portrait-of-smiling-handsome-man-in-white-t-shirt-standing-with-crossed-arms.jpg?s=612x612&w=0&k=20&c=6vUtfKvHhNsK9kdNWb7EJlksBDhBBok1bNjNRULsAYs=',
-                        fit: BoxFit.fill,
-                        height: 100,
-                      ),
+                        GestureDetector(
+                          onTap: () {},
+                          child: CircleAvatar(
+                            radius: 50,
+                            child: ClipOval(
+                              child: Image.network(
+                                userProvider.currentUser!.profilePicture
+                                    .toString(),
+                                fit: BoxFit.cover,
+                                height: 100,
+                                width: 100,
+                              ),
+                            ),
                     ),
                   ),
                   textField(nameController, const Icon(Icons.person), userProvider.currentUser?.name ?? 'Name'),
@@ -68,8 +76,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   textField(numberController, const Icon(Icons.phone), '7783076220'),
                   ElevatedButton(
                     onPressed: () {
-                      // Handle profile update logic here
-                    },
+                            Navigator.pop(context);
+                          },
                     child: const Text('Update Profile'),
                   ),
                 ],

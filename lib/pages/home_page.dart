@@ -3,9 +3,12 @@ import 'package:bat_karo/controller/device_token_service.dart';
 import 'package:bat_karo/controller/notification_services.dart';
 import 'package:bat_karo/pages/profile_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:googleapis/compute/v1.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../controller/user_controller.dart';
 import 'chat_page.dart';
 
@@ -20,6 +23,9 @@ class ChatHomePage extends StatefulWidget {
 class _ChatHomePageState extends State<ChatHomePage> {
   NotificationServices notificationServices = NotificationServices();
   DeviceTokenService deviceTokenService = DeviceTokenService();
+  String? userName;
+  String? userEmail;
+  String? profilePic;
 
   @override
   void initState() {
@@ -31,6 +37,7 @@ class _ChatHomePageState extends State<ChatHomePage> {
     UserProvider userProvider =
         Provider.of<UserProvider>(context, listen: false);
     userProvider.getCurrentUser();
+    getUserData();
     Future.microtask(() {
       Provider.of<UserProvider>(context, listen: false)
           .fetchUserData(widget.uid);
@@ -82,6 +89,20 @@ class _ChatHomePageState extends State<ChatHomePage> {
     );
   }
 
+  void getUserData() async {
+    var uid = FirebaseAuth.instance.currentUser!.uid;
+    var userRef = await FirebaseDatabase.instance.ref('user/${uid}').get();
+    if (userRef.exists) {
+      Map<String, dynamic> userData = Map<String, dynamic>.from(
+          userRef.value as Map);
+      setState(() {
+        userName = userData['name'];
+        userEmail = userData['email'];
+        profilePic = userData['profilePicture'];
+      });
+    }
+  }
+
   @override
   @override
   Widget build(BuildContext context) {
@@ -97,19 +118,8 @@ class _ChatHomePageState extends State<ChatHomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              Provider.of<UserProvider>(context, listen: false)
-                  .logoutUser(context);
-            },
-            icon: const Icon(
-              Icons.logout,
-              color: Colors.white,
-            ),
-          ),
-          IconButton(
               onPressed: () {
                 showItemMenuDialog(context);
-                // Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage(),));
               },
               icon: Icon(Icons.more_vert))
         ],
@@ -118,33 +128,27 @@ class _ChatHomePageState extends State<ChatHomePage> {
           child: Column(
             children: [
               // User Account Header
-              const UserAccountsDrawerHeader(
+              UserAccountsDrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.blue, // Background color
+                  color: Colors.pinkAccent, // Background color
                 ),
                 accountName: Text(
-                  "",
-                  style: TextStyle(
+                  userName ?? 'Unknown Person',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 accountEmail: Text(
-                  "johndoe@example.com", // Replace with userProvider.currentUser!.email.toString()
-                  style: TextStyle(
+                  userEmail ?? 'unknown',
+                  style: const TextStyle(
                     fontSize: 14,
                   ),
                 ),
                 currentAccountPicture: CircleAvatar(
+                  maxRadius: 30,
                   backgroundColor: Colors.white,
-                  child: Text(
-                    "J", // First letter of the user's name
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
+                  backgroundImage: NetworkImage(profilePic.toString()),
                 ),
               ),
 
@@ -153,17 +157,11 @@ class _ChatHomePageState extends State<ChatHomePage> {
                 child: ListView(
                   children: [
                     ListTile(
-                      leading: Icon(Icons.home),
-                      title: Text("Home"),
-                      onTap: () {
-                        // Navigate to Home
-                      },
-                    ),
-                    ListTile(
                       leading: Icon(Icons.person),
                       title: Text("Profile"),
                       onTap: () {
-                        // Navigate to Profile
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) => const ProfilePage(),));
                       },
                     ),
                     ListTile(
@@ -177,7 +175,17 @@ class _ChatHomePageState extends State<ChatHomePage> {
                       leading: Icon(Icons.logout),
                       title: Text("Logout"),
                       onTap: () {
-                        // Handle logout
+                        Provider.of<UserProvider>(context, listen: false)
+                            .logoutUser(context);
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.share),
+                      title: Text("Share"),
+                      onTap: () async {
+                        var text = await deviceTokenService
+                            .generateDynamicLink();
+                        Share.share(text.toString());
                       },
                     ),
                   ],
@@ -186,45 +194,68 @@ class _ChatHomePageState extends State<ChatHomePage> {
             ],
           ),
         ),
-      body: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          if (userProvider.isLoding) {
-            return Center(child: CircularProgressIndicator());
-          } else if (userProvider.userData.isEmpty) {
-            return Center(child: Text("No users found"));
-          } else {
-            return ListView.builder(
-              itemCount: userProvider.userData.length,
-              itemBuilder: (context, index) {
-                var user = userProvider.userData[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatPage(
-                            otherUid: user.id.toString(),
-                            name: user.name.toString(),
-                            email: user.email.toString(),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 18.0, vertical: 10),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                if (userProvider.isLoding) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (userProvider.userData.isEmpty) {
+                  return const Center(child: Text("No users found"));
+                } else {
+                  return Expanded(child: ListView.builder(
+                    itemCount: userProvider.userData.length,
+                    itemBuilder: (context, index) {
+                      var user = userProvider.userData[index];
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ChatPage(
+                                      otherUid: user.id.toString(),
+                                      name: user.name.toString(),
+                                      email: user.email.toString(),
+                                      profile: user.profilePicture.toString(),
+                                    ),
+                              ));
+                        },
+                        child: Card(
+                          margin: EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 16),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: NetworkImage(
+                                  user.profilePicture.toString()),
+                            ),
+                            title: Text("${user.name}"),
+                            subtitle: Text("${user.email}"),
                           ),
-                        ));
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Icon(Icons.person),
-                      ),
-                      title: Text("${user.name}"),
-                      subtitle: Text("${user.email}"),
-                    ),
-                  ),
-                );
+                        ),
+                      );
+                    },
+                  ));
+                }
               },
-            );
-          }
-        },
-      ),
+            ),
+          ],
+        )
+
+
     );
   }
 

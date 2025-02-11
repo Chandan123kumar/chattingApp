@@ -1,16 +1,13 @@
 import 'dart:core';
-
-import 'package:bat_karo/controller/notification_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
 import '../model/user_model.dart';
 import '../pages/home_page.dart';
-import '../pages/login_page.dart';
+import '../user_authentication/login_page.dart';
+
 class UserProvider with ChangeNotifier{
   final  auth = FirebaseAuth.instance;
   bool isLoding = true;
@@ -23,9 +20,8 @@ class UserProvider with ChangeNotifier{
   List<UserModel> get userData=> _userData;
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
-  // SignUp code//
 
-  void userSignUp(BuildContext context) async{
+  userSignUp(BuildContext context) async {
     var name =  nameController.text.toString();
     var email = emailController.text.toString();
     var password= passwordController.text.toString();
@@ -93,8 +89,6 @@ class UserProvider with ChangeNotifier{
     Fluttertoast.showToast(msg: "logOut User");
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage(),));
   }
-
-//user view code//
 
   Future<void> fetchUserData(String uid) async {
     DatabaseReference ref = FirebaseDatabase.instance.ref("user");

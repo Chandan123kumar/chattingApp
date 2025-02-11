@@ -9,4 +9,7 @@ class AssetsRes {
   static const String PLUGIN_NAME = 'bat_karo';
   static const String PLUGIN_VERSION = '1.0.0+1';
   static const String ACCESS_TOKEN_SECRET_KEY = 'assets/access_token_secret_key.json';
+  static const String GROUP = 'assets/animations/group.json';
+  static const String MSG = 'assets/animations/msg.json';
+  static const String MSGS = 'assets/animations/msgs.json';
 }
